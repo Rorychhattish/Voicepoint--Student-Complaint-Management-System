@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard - Smart Complaint System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background-color: #f9f9f9; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+
+    nav {
+      background-color: #005baa;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav h1 { font-size: 1.5rem; }
+    nav a { color: white; text-decoration: none; margin-left: 1rem; }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+    }
+    .filters {
+      margin-bottom: 1.5rem;
+    }
+    .filters select {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .complaint-card {
+      background-color: white;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .complaint-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .status-dropdown {
+      margin-right: 1rem;
+    }
+    .actions {
+      margin-top: 0.5rem;
+    }
+    button {
+      padding: 0.4rem 0.8rem;
+      margin-right: 0.5rem;
+      background-color: #005baa;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004b8a;
+    }
+
+    footer {
+      background-color: #005baa;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <h1>Admin Panel</h1>
+    <div>
+      <a href="#">Dashboard</a>
+      <a href="#">Logout</a>
+    </div>
+  </nav>
+
+<main>
+  <div class="filters">
+    <label for="statusFilter">Filter by Status:</label>
+    <select id="statusFilter" onchange="filterComplaints()">
+      <option value="All">All</option>
+      <option value="Submitted">Submitted</option>
+      <option value="Assigned">Assigned</option>
+      <option value="InProgress">InProgress</option>
+      <option value="Done">Done</option>
+    </select>
+  </div>
+
+  <!-- 🔁 Assign Complaint Form -->
+  <div class="assign-form" style="margin-bottom: 2rem; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); max-width: 500px;">
+    <h3>Assign Complaint to Admin/Staff</h3>
+    <form id="assignForm">
+      <label for="complaintId">Complaint ID:</label><br>
+      <input type="number" id="complaintId" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;"><br>
+
+      <label for="assignee">Assignee Name:</label><br>
+      <input type="text" id="assignee" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;"><br>
+
+      <button type="submit">Assign</button>
+    </form>
+    <p id="assignMsg" style="margin-top: 1rem;"></p>
+  </div>
+
+  <div id="complaintList">
+    <!-- Complaints load here -->
+  </div>
+</main>
+
+
+  <footer>
+    &copy; 2025 Smart Complaint System. All rights reserved.
+  </footer>
+
+  <script>
+   
+  let allComplaints = [];
+
+  async function fetchComplaints() {
+    try {
+      const res = await fetch("/get_complaints");
+      const data = await res.json();
+      allComplaints = data.complaints || [];
+      renderComplaints();
+    } catch (err) {
+      document.getElementById("complaintList").innerHTML = "<p>Error loading complaints.</p>";
+    }
+  }
+
+  function renderComplaints(filter = "All") {
+    const list = document.getElementById("complaintList");
+    list.innerHTML = "";
+
+    const filtered = allComplaints.filter(c => filter === "All" || c.status === filter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = "<p>No complaints found for selected filter.</p>";
+      return;
+    }
+
+    filtered.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "complaint-card";
+
+      card.innerHTML = `
+        <div class="complaint-header">
+          <h3>${c.title}</h3>
+          <select onchange="updateStatus(${c.id}, this.value)" class="status-dropdown">
+            <option value="Submitted" ${c.status === "Submitted" ? "selected" : ""}>Submitted</option>
+            <option value="Assigned" ${c.status === "Assigned" ? "selected" : ""}>Assigned</option>
+            <option value="InProgress" ${c.status === "InProgress" ? "selected" : ""}>InProgress</option>
+            <option value="Done" ${c.status === "Done" ? "selected" : ""}>Done</option>
+          </select>
+        </div>
+        <p><strong>Student:</strong> ${c.student_name} (${c.email})</p>
+        <p><strong>Description:</strong> ${c.description}</p>
+        <p><strong>Type:</strong> ${c.type}</p>
+        <p><strong>Status:</strong> ${c.status}</p>
+        <p><strong>Submitted At:</strong> ${c.submitted_at}</p>
+        ${c.file_url ?` <p><a href="${c.file_url}" target="_blank">View Image</a></p>` : ""}
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  function filterComplaints() {
+    const filter = document.getElementById("statusFilter").value;
+    renderComplaints(filter);
+  }
+
+  async function updateStatus(id, status) {
+    try {
+      const res = await fetch("/update_status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        fetchComplaints();
+      } else {
+        alert("Failed to update status: " + result.error);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error updating status.");
+    }
+  }
+
+  document.getElementById("assignForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const id = document.getElementById("complaintId").value;
+    const assignee = document.getElementById("assignee").value;
+
+    try {
+      const res = await fetch("/assign_complaint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, assignee })
+      });
+
+      const result = await res.json();
+      const msg = document.getElementById("assignMsg");
+      if (result.success) {
+        msg.textContent = result.message;
+        msg.style.color = "green";
+        fetchComplaints();  // refresh dashboard
+      } else {
+        msg.textContent = result.error;
+        msg.style.color = "red";
+      }
+    } catch (err) {
+      console.error("Assignment Error:", err);
+      document.getElementById("assignMsg").textContent = "Error assigning complaint.";
+    }
+  });
+
+  // Initial fetch
+  fetchComplaints();
+
+
+  </script>
+
+</body>
+</html>
