@@ -25,8 +25,8 @@ A web-based application designed to streamline the submission, tracking, and res
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/yourusername/complaint-management-system.git
-cd complaint-management-system
+git clone https://github.com/Rorychhattish/Voicepoint--Student-Complaint-Management-System.git
+cd Voicepoint--Student-Complaint-Management-System
 
 # 2. Create virtual environment & activate
 python -m venv venv
