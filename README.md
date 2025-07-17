@@ -2,14 +2,6 @@
 
 A web-based application designed to streamline the submission, tracking, and resolution of user complaints. Built using Python and deployed on Microsoft Azure, this system is ideal for institutions or organizations aiming to improve transparency and accountability.
 
----
-
-## 🌐 Live Demo
-
-[View Live on Azure](https://6605253chhatishkumarsahg1-<your-url>.azurewebsites.net)
-
----
-
 ## 🛠️ Features
 
 - 🔐 User-friendly complaint submission form
@@ -57,7 +49,6 @@ DB_PASSWORD=your-db-password
 SECRET_KEY=your-secret-key
 PORT=8000
 ☁️ Deployment (Azure App Service)
-Push your code to GitHub
 
 Link Azure App Service to the GitHub repo (via Deployment Center)
 
